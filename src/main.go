@@ -13,15 +13,15 @@ import (
 )
 
 const (
-	dir 			= "/Users/shine/Desktop"
-	FILE 			= "File"
-	FOLDER 			= "Folder"
+	dir 			= 		"/Users/shine/Desktop"
+	FILE 			= 		"File"
+	FOLDER 			= 		"Folder"
 )
 
 type File struct {
-	ID				int `json:"id"`
-	Title			string `json:"title"`
-	Type			string `json:"type"`
+	ID				int 	`json:"id"`
+	Title			string	`json:"title"`
+	Type			string	`json:"type"`
 }
 
 func createFileJSON(id int, title string, fileType string) *File {
