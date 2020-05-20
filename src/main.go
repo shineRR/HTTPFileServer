@@ -5,10 +5,17 @@ import (
 	"github.com/labstack/gommon/log"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+)
+
+const (
+	dir 			= "/Users/shine/Desktop"
+	FILE 			= "File"
+	FOLDER 			= "Folder"
 )
 
 type File struct {
@@ -16,12 +23,6 @@ type File struct {
 	Title			string `json:"title"`
 	Type			string `json:"type"`
 }
-
-const (
-	dir 			= "/Users/shine/Desktop"
-	FILE 			= "File"
-	FOLDER 			= "Folder"
-)
 
 func createFileJSON(id int, title string, fileType string) *File {
 	file := new(File)
@@ -42,6 +43,20 @@ func defineFileOrFolder(filename string) string {
 	} else {
 		return FOLDER
 	}
+}
+
+func copyFile(c echo.Context, src multipart.File, path string) error {
+	dst, err := os.Create(path)
+	if err != nil {
+		c.Response().WriteHeader(http.StatusInternalServerError)
+		return err
+	}
+	defer dst.Close()
+	if _, err = io.Copy(dst, src); err != nil {
+		c.Response().WriteHeader(http.StatusInternalServerError)
+		return err
+	}
+	return nil
 }
 
 func getFiles(c echo.Context) {
@@ -87,6 +102,12 @@ func handleGETMethod(c echo.Context) error {
 
 func handlePUTMethod(c echo.Context) error {
 
+	_, err := os.Stat(dir + c.Request().RequestURI)
+	if err != nil {
+		c.Response().WriteHeader(http.StatusNotFound)
+		return nil
+	}
+
 	file, err := c.FormFile(FILE)
 	if err != nil {
 		c.Response().WriteHeader(http.StatusNotFound)
@@ -100,16 +121,9 @@ func handlePUTMethod(c echo.Context) error {
 
 	path := dir + c.Request().RequestURI + file.Filename
 
-	dst, err := os.Create(path)
+	err = copyFile(c, src, path)
 	if err != nil {
-		c.Response().WriteHeader(http.StatusInternalServerError)
-		return err
-	}
-	defer dst.Close()
-
-	if _, err = io.Copy(dst, src); err != nil {
-		c.Response().WriteHeader(http.StatusInternalServerError)
-		return err
+		return nil
 	}
 
 	json := createFileJSON(0,  file.Filename, FILE)
@@ -169,11 +183,33 @@ func handleHEADMethod(c echo.Context) error {
 	return nil
 }
 
+func handlePOSTMethod(c echo.Context) error {
+	currPath := dir + c.Request().RequestURI;
+	nextPath := dir + c.Request().Header.Get("X-Copy-From")
+
+	file, err := os.Open(currPath)
+	if err != nil {
+		c.Response().WriteHeader(http.StatusNotFound)
+		return err
+	}
+
+	defer file.Close()
+
+	err = copyFile(c, file, nextPath)
+	if err != nil {
+		c.Response().WriteHeader(http.StatusInternalServerError)
+		return nil
+	}
+	c.Response().WriteHeader(http.StatusOK)
+	return nil
+}
+
 func main() {
 	e := echo.New()
 	e.GET("*", handleGETMethod)
 	e.PUT("*", handlePUTMethod)
 	e.DELETE("*", handleDELETEMethod)
 	e.HEAD("*", handleHEADMethod)
+	e.POST("*", handlePOSTMethod)
 	e.Logger.Fatal(e.Start(":1323"))
 }

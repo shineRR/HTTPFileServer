@@ -25,6 +25,7 @@
         <method importPath="github.com/labstack/echo" receiver="Context" name="JSON" />
         <method importPath="os" receiver="*File" name="Close" />
         <method importPath="mime/multipart" receiver="File" name="Close" />
+        <method importPath="github.com/labstack/echo" receiver="Context" name="File" />
       </methods>
     </inspection_tool>
   </profile>
