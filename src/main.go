@@ -48,12 +48,12 @@ func defineFileOrFolder(filename string) string {
 func copyFile(c echo.Context, src multipart.File, path string) error {
 	dst, err := os.Create(path)
 	if err != nil {
-		c.Response().WriteHeader(http.StatusInternalServerError)
+		c.Response().WriteHeader(http.StatusBadRequest)
 		return err
 	}
 	defer dst.Close()
 	if _, err = io.Copy(dst, src); err != nil {
-		c.Response().WriteHeader(http.StatusInternalServerError)
+		c.Response().WriteHeader(http.StatusBadRequest)
 		return err
 	}
 	return nil
@@ -127,7 +127,7 @@ func handlePUTMethod(c echo.Context) error {
 	}
 
 	json := createFileJSON(0,  file.Filename, FILE)
-	return c.JSON(http.StatusCreated, json)
+	return c.JSON(http.StatusOK, json)
 }
 
 func handleDELETEMethod(c echo.Context) error {
@@ -141,7 +141,7 @@ func handleDELETEMethod(c echo.Context) error {
 
 	err = os.RemoveAll(path)
 	if err != nil {
-		c.Response().WriteHeader(http.StatusInternalServerError)
+		c.Response().WriteHeader(http.StatusBadRequest)
 		return nil
 	}
 
@@ -160,7 +160,7 @@ func handleHEADMethod(c echo.Context) error {
 
 	file, err := os.Open(path)
 	if err != nil {
-		c.Response().WriteHeader(http.StatusInternalServerError)
+		c.Response().WriteHeader(http.StatusBadRequest)
 		return nil
 	}
 	defer file.Close()
@@ -168,7 +168,7 @@ func handleHEADMethod(c echo.Context) error {
 	buffer := make([]byte, 512)
 	n, err := file.Read(buffer)
 	if err != nil {
-		c.Response().WriteHeader(http.StatusInternalServerError)
+		c.Response().WriteHeader(http.StatusBadRequest)
 		return nil
 	}
 
@@ -197,7 +197,7 @@ func handlePOSTMethod(c echo.Context) error {
 
 	err = copyFile(c, file, nextPath)
 	if err != nil {
-		c.Response().WriteHeader(http.StatusInternalServerError)
+		c.Response().WriteHeader(http.StatusBadRequest)
 		return nil
 	}
 	c.Response().WriteHeader(http.StatusOK)
