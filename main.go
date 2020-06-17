@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 )
 
 const (
@@ -37,11 +36,11 @@ func (file File) addToJSON(files []File) []File {
 	return files
 }
 
-func defineFileOrFolder(filename string) string {
-	if strings.Contains(filename, ".") {
-		return FILE
-	} else {
+func defineFileOrFolder(filename os.FileInfo) string {
+	if filename.IsDir() {
 		return FOLDER
+	} else {
+		return FILE
 	}
 }
 
@@ -60,7 +59,8 @@ func copyFile(c echo.Context, src multipart.File, path string) error {
 }
 
 func getFiles(c echo.Context) {
-	files, err := ioutil.ReadDir(dir + c.Request().RequestURI)
+	path := dir + c.Request().RequestURI
+	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		log.Print(err)
 		c.Response().WriteHeader(http.StatusNotFound)
@@ -72,7 +72,7 @@ func getFiles(c echo.Context) {
 	for index, f := range files {
 		file.ID = index
 		file.Title = f.Name()
-		file.Type = defineFileOrFolder(f.Name())
+		file.Type = defineFileOrFolder(f)
 		foldersFiles = file.addToJSON(foldersFiles)
 	}
 
